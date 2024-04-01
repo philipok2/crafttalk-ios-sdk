@@ -15,21 +15,6 @@ internal enum CTPreviewType: Equatable {
     case image(fileURL: URL)
     case video(fileURL: URL)
     
-    var isPDF: Bool {
-        guard case .pdf = self else { return false }
-        return true
-    }
-    
-    var isImage: Bool {
-        guard case .image = self else { return false }
-        return true
-    }
-    
-    var isVideo: Bool {
-        guard case .video = self else { return false }
-        return true
-    }
-    
     var name: String {
         switch self {
         case .pdf(_): return "PDF файл"
@@ -73,9 +58,13 @@ internal final class CTPreviewViewController: UIViewController, CTVideoViewDeleg
         return pdfView
     }()
     
-    private lazy var imageScrollView = CTImageScrollView(frame: view.frame)
-    private lazy var videoView = CTVideoView()
-  
+    private lazy var imageScrollView: CTImageScrollView = {
+        return CTImageScrollView(frame: view.frame)
+    }()
+    
+    private lazy var videoView: CTVideoView = {
+        return CTVideoView()
+    }()
     
     // MARK: - Properties
     private var previewType: CTPreviewType!
@@ -92,7 +81,7 @@ internal final class CTPreviewViewController: UIViewController, CTVideoViewDeleg
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        if case .image(_) = previewType {
+        if case CTPreviewType.image(_) = previewType! {
             imageScrollView.setupForCurrentDeviceOrientation()
         }
     }
@@ -106,56 +95,16 @@ internal final class CTPreviewViewController: UIViewController, CTVideoViewDeleg
         let previewViewController = CTPreviewViewController()
         previewViewController.previewType = previewType
         
-        let navigationController = UINavigationController(rootViewController: previewViewController)
-        
-        switch previewType {
-        case .image(_), .video(_):
-            navigationController.modalPresentationStyle = .fullScreen
-        default:
-            break
-        }
-        
-        return navigationController
+        return UINavigationController(rootViewController: previewViewController)
     }
     
     // MARK: - Setup subviews
     private func setupNavigationBarButtonItems() {
-        let doneButton = { () -> UIBarButtonItem in
-            if case .pdf(_) = previewType  {
-                return UIBarButtonItem(
-                    image: UIImage.cross(),
-                    style: .done,
-                    target: self,
-                    action: #selector(doneButtonPressed)
-                )
-            }
-            else {
-                return UIBarButtonItem(
-                    title: NSLocalizedString(
-                        "Закрыть",
-                        comment: "Close button"
-                    ),
-                    style: .done,
-                    target: self,
-                    action: #selector(doneButtonPressed)
-                )
-            }
-        }()
-        navigationItem.setLeftBarButton(
-            doneButton,
-            animated: false
-        )
+        let doneButton = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(doneButtonPressed))
+        navigationItem.setRightBarButton(doneButton, animated: false)
         
-        let saveButton = UIBarButtonItem(
-            image: UIImage.share(),
-            style: .done,
-            target: self,
-            action: #selector(saveButtonPressed)
-        )
-        navigationItem.setRightBarButton(
-            saveButton,
-            animated: false
-        )
+        let saveButton = UIBarButtonItem(barButtonSystemItem: .save, target: self, action: #selector(saveButtonPressed))
+        navigationItem.setLeftBarButton(saveButton, animated: false)
     }
     
     private func setupNeededView(for previewType: CTPreviewType) {
@@ -177,9 +126,6 @@ internal final class CTPreviewViewController: UIViewController, CTVideoViewDeleg
         view.addSubview(pdfView)
         pdfView.fillSuperviewFromSafeAreaLayoutGuideTopAnchor()
         pdfView.document = document
-        pdfView.layoutIfNeeded()
-        pdfView.maxScaleFactor = 4.0
-        pdfView.minScaleFactor = pdfView.scaleFactorForSizeToFit
     }
     
     private func setupImagePreview(imageURL: URL) {
@@ -210,7 +156,7 @@ internal final class CTPreviewViewController: UIViewController, CTVideoViewDeleg
     }
     
     private func checkPermission(for previewType: CTPreviewType) -> Bool {
-        guard previewType.isVideo || previewType.isImage else { return true }
+        guard previewType == .image(fileURL: URL(string: "www.google.com")!) || previewType == .video(fileURL: URL(string: "www.google.com")!) else { return true }
         let status: PHAuthorizationStatus
         if #available(iOS 14, *) {
             status = PHPhotoLibrary.authorizationStatus(for: .addOnly)
@@ -266,14 +212,14 @@ internal final class CTPreviewViewController: UIViewController, CTVideoViewDeleg
         } else {
             items[2] = UIBarButtonItem(barButtonSystemItem: .play, target: self, action: #selector(playButtonPressed))
         }
-        toolbarItems = items
+        self.toolbarItems = items
     }
     
     // MARK: - Button handling
     @objc
     private func doneButtonPressed() {
-        DispatchQueue.main.async {
-            self.dismiss(animated: true)
+        DispatchQueue.main.async { [weak self] in
+            self?.dismiss(animated: true, completion: nil)
         }
     }
     
