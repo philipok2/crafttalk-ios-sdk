@@ -7,8 +7,8 @@
 
 import UIKit
 import UserNotifications
-import FirebaseCore
-import FirebaseMessaging
+//import FirebaseCore
+//import FirebaseMessaging
 
 @UIApplicationMain
 /// Этот код предназначен для конфигурации CTChat и FirebaseApp, а также для регистрации пользователя и получения уведомлений Push в приложении iOS.
@@ -18,19 +18,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         
-        FirebaseApp.configure()
+        //FirebaseApp.configure()
         CTChat.shared.configure()
         let uuid =  UUID().uuidString
         let visitor = CTVisitor(firstName: "Anonymous", lastName: "", uuid: uuid, customProperties: ["custom" : "123"])
         CTChat.shared.registerVisitor(visitor)
-        
+       
         registerAppForRemoteNotifications(application: application)
+
         return true
     }
 }
 
 // Push notifications
 extension AppDelegate: MessagingDelegate, UNUserNotificationCenterDelegate {
+
     private func registerAppForRemoteNotifications(application: UIApplication) {
         Messaging.messaging().delegate = self
         if #available(iOS 10.0, *) {
@@ -83,6 +85,7 @@ extension AppDelegate: MessagingDelegate, UNUserNotificationCenterDelegate {
 }
 
 //этот метод позволяет настроить различные параметры для объекта CTChat, такие как базовый URL, пространство имен, соль и флаг включения/отключения консоли.
+
 extension CTChat {
     func configure(baseURL: String, namespace: String, salt: String, isConsoleEnabled: Bool) {
         print(baseURL, namespace, salt, isConsoleEnabled)
